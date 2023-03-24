@@ -71,6 +71,37 @@ class BasePin extends Pin() {
 }
 
 /////////////////////////////////////////////////////////////////////////
+
+/**
+
+Dear Kevin,
+
+Here's the signal mapping to Intech IOCells:
+
+Pin        dir    IOCell    Description
+---------------------------------
+ival        <     outi      Input data (read from pad)
+ie          >     ~enabq    Input enable
+oval        >     ~dq       Output data (drive pad)
+oe          >     ~enq      Output enable
+mode        >     ppen      Push-pull / open-drain
+pullup_en   >     ~puq      Enable pullup resistor
+pulldown_en >     pd        Enable pulldown resistor
+prog_slew   >     prg_slew  Programmable slew rate
+ds0         >     drv0      Drive strength bit 0
+ds1         >     drv1      Drive strength bit 1
+ds2         >     drv2      Drive strength bit 2
+
+Note that some signals need to be inverted.
+
+Wish you enjoy the integration process!
+
+Best regard and sincerely,
+Yufeng
+
+*/
+
+
 class EnhancedPinCtrl extends PinCtrl {
   val mode        = Bool()
   val pullup_en   = Bool()

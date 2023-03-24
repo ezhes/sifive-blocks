@@ -21,17 +21,17 @@ object SPIPinsFromPort {
     syncStages: Int = 0, driveStrength: Bool = Bool(false)) {
 
     withClockAndReset(clock, reset) {
-      pins.sck.outputPin(spi.sck, ds = driveStrength)
+      pins.sck.outputPin(spi.sck, ds0 = driveStrength)
 
       (pins.dq zip spi.dq).zipWithIndex.foreach {case ((p, s), i) =>
-        p.outputPin(s.o, pue = Bool(true), ds = driveStrength)
+        p.outputPin(s.o, pullup_en = Bool(true), ds0 = driveStrength)
         p.o.oe := s.oe
         p.o.ie := ~s.oe
         s.i := SynchronizerShiftReg(p.i.ival, syncStages, name = Some(s"spi_dq_${i}_sync"))
       }
 
       (pins.cs zip spi.cs) foreach { case (c, s) =>
-        c.outputPin(s, ds = driveStrength)
+        c.outputPin(s, ds0 = driveStrength)
       }
     }
   }

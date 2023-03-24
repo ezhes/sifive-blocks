@@ -64,7 +64,7 @@ class MockAONWrapper(w: Int, c: MockAONParams)(implicit p: Parameters) extends L
     // -----------------------------------------------
 
     // ERST
-    val erst = ~pins.erst_n.inputPin(pue = Bool(true))
+    val erst = ~pins.erst_n.inputPin(pullup_en = Bool(true))
     aon_io.resetCauses.erst := erst
     aon_io.resetCauses.wdogrst := aon_io.wdog_rst
 
@@ -90,7 +90,7 @@ class MockAONWrapper(w: Int, c: MockAONParams)(implicit p: Parameters) extends L
     // Note that the actual mux lives inside AON itself.
     // Therefore, the lfclk which comes out of AON is the
     // true clock that AON and AONWrapper are running off of.
-    val lfextclk = pins.lfextclk.inputPin(pue=Bool(true))
+    val lfextclk = pins.lfextclk.inputPin(pullup_en = Bool(true))
     aon_io.lfextclk := lfextclk.asClock
 
     // Drive AON's clock and Reset
@@ -127,7 +127,7 @@ class MockAONWrapper(w: Int, c: MockAONParams)(implicit p: Parameters) extends L
     // PMU <--> pins Interface
     //--------------------------------------------------
 
-    val dwakeup_n_async = pins.pmu.dwakeup_n.inputPin(pue=Bool(true))
+    val dwakeup_n_async = pins.pmu.dwakeup_n.inputPin(pullup_en = Bool(true))
 
     val dwakeup_deglitch = Module (new DeglitchShiftRegister(3))
     dwakeup_deglitch.clock := lfclk

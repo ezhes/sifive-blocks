@@ -23,10 +23,14 @@ abstract class Pin extends Bundle {
 
   // Must be defined by the subclasses
   def default(): Unit
-  def inputPin(pue: Bool = Bool(false)): Bool
+  def inputPin(mode: Bool = Bool(false), pullup_en: Bool = Bool(false), pulldown_en: Bool = Bool(false)): Bool
   def outputPin(signal: Bool,
-    pue: Bool = Bool(false),
-    ds: Bool = Bool(false),
+    mode: Bool = Bool(false), 
+    pullup_en: Bool = Bool(false),
+    pulldown_en: Bool = Bool(false),
+    ds0: Bool = Bool(false),
+    ds1: Bool = Bool(false),
+    ds2: Bool = Bool(false),
     ie: Bool = Bool(false)
   ): Unit
   
@@ -44,7 +48,7 @@ class BasePin extends Pin() {
     this.o.ie   := Bool(false)
   }
 
-  def inputPin(pue: Bool = Bool(false) /*ignored*/): Bool = {
+  def inputPin(mode: Bool = Bool(false), pullup_en: Bool = Bool(false), pulldown_en: Bool = Bool(false)): Bool = {
     this.o.oval := Bool(false)
     this.o.oe   := Bool(false)
     this.o.ie   := Bool(true)
@@ -52,8 +56,12 @@ class BasePin extends Pin() {
   }
 
   def outputPin(signal: Bool,
-    pue: Bool = Bool(false), /*ignored*/
-    ds: Bool = Bool(false), /*ignored*/
+    mode: Bool = Bool(false), 
+    pullup_en: Bool = Bool(false),
+    pulldown_en: Bool = Bool(false),
+    ds0: Bool = Bool(false),
+    ds1: Bool = Bool(false),
+    ds2: Bool = Bool(false),
     ie: Bool = Bool(false)
   ): Unit = {
     this.o.oval := signal
@@ -64,57 +72,72 @@ class BasePin extends Pin() {
 
 /////////////////////////////////////////////////////////////////////////
 class EnhancedPinCtrl extends PinCtrl {
-  val pue = Bool()
-  val ds  = Bool()
-  val ps  = Bool()
-  val ds1 = Bool()
-  val poe = Bool()
-
+  val mode        = Bool()
+  val pullup_en   = Bool()
+  val pulldown_en = Bool()
+  val prog_slew   = Bool()
+  val ds0         = Bool()
+  val ds1         = Bool()
+  val ds2         = Bool()
+  val poe         = Bool()
 }
 
-class EnhancedPin  extends Pin() {
-
+class EnhancedPin extends Pin() {
   val o = new EnhancedPinCtrl().asOutput
 
   def default(): Unit = {
-    this.o.oval := Bool(false)
-    this.o.oe   := Bool(false)
-    this.o.ie   := Bool(false)
-    this.o.ds   := Bool(false)
-    this.o.pue  := Bool(false)
-    this.o.ds1  := Bool(false)
-    this.o.ps   := Bool(false)
-    this.o.poe  := Bool(false)
-
+    this.o.mode         := Bool(false)
+    this.o.pullup_en    := Bool(false)
+    this.o.pulldown_en  := Bool(false)
+    this.o.prog_slew    := Bool(false)
+    this.o.ds0          := Bool(false)
+    this.o.ds1          := Bool(false)
+    this.o.ds2          := Bool(false)
+    this.o.poe          := Bool(false)
   }
 
-  def inputPin(pue: Bool = Bool(false)): Bool = {
-    this.o.oval := Bool(false)
-    this.o.oe   := Bool(false)
-    this.o.pue  := pue
-    this.o.ds   := Bool(false)
-    this.o.ie   := Bool(true)
-    this.o.ds1  := Bool(false)
-    this.o.ps   := Bool(false)
-    this.o.poe  := Bool(false)
+  def inputPin(mode: Bool = Bool(false),
+    pullup_en: Bool = Bool(false),
+    pulldown_en: Bool = Bool(false)
+  ): Bool = {
+    this.o.ie           := Bool(true)
+    this.o.oe           := Bool(false)
+    this.o.oval         := Bool(false)
+    this.o.mode         := mode
+    this.o.pullup_en    := pullup_en
+    this.o.pulldown_en  := pulldown_en
+    this.o.prog_slew    := Bool(false)
+    this.o.ds0          := Bool(false)
+    this.o.ds1          := Bool(false)
+    this.o.ds2          := Bool(false)
+    this.o.poe          := Bool(false)
 
     this.i.ival
   }
 
   def outputPin(signal: Bool,
-    pue: Bool = Bool(false),
-    ds: Bool = Bool(false),
+    mode: Bool = Bool(false), 
+    pullup_en: Bool = Bool(false),
+    pulldown_en: Bool = Bool(false),
+    ds0: Bool = Bool(false),
+    ds1: Bool = Bool(false),
+    ds2: Bool = Bool(false),
     ie: Bool = Bool(false)
   ): Unit = {
-    this.o.oval := signal
-    this.o.oe   := Bool(true)
-    this.o.pue  := pue
-    this.o.ds   := ds
-    this.o.ie   := ie
+    this.o.ie           := ie
+    this.o.oe           := Bool(false)
+    this.o.oval         := signal
+    this.o.mode         := mode
+    this.o.pullup_en    := pullup_en
+    this.o.pulldown_en  := pulldown_en
+    this.o.prog_slew    := Bool(false)
+    this.o.ds0          := ds0
+    this.o.ds1          := ds1
+    this.o.ds2          := ds2
+    this.o.poe          := Bool(false)
   }
 
   def toBasePin(): BasePin = {
-
     val base_pin = Wire(new BasePin())
     base_pin <> this
     base_pin

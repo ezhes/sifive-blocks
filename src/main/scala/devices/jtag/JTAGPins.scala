@@ -25,10 +25,10 @@ class JTAGPins[T <: Pin](pingen: () => T, hasTRSTn: Boolean = true) extends JTAG
 object JTAGPinsFromPort {
 
   def apply[T <: Pin] (pins: JTAGSignals[T], jtag: JTAGIO): Unit = {
-    jtag.TCK  := pins.TCK.inputPin (pue = Bool(true)).asClock
-    jtag.TMS  := pins.TMS.inputPin (pue = Bool(true))
-    jtag.TDI  := pins.TDI.inputPin(pue = Bool(true))
-    jtag.TRSTn.foreach{t => t := pins.TRSTn.get.inputPin(pue = Bool(true))}
+    jtag.TCK  := pins.TCK.inputPin(pullup_en = Bool(true)).asClock
+    jtag.TMS  := pins.TMS.inputPin(pullup_en = Bool(true))
+    jtag.TDI  := pins.TDI.inputPin(pullup_en = Bool(true))
+    jtag.TRSTn.foreach{t => t := pins.TRSTn.get.inputPin(pullup_en = Bool(true))}
 
     pins.TDO.outputPin(jtag.TDO.data)
     pins.TDO.o.oe := jtag.TDO.driven

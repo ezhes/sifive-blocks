@@ -36,15 +36,23 @@ class IOFPin extends Pin {
     this.o.valid := Bool(false)
   }
 
-  def inputPin(pue: Bool = Bool(false) /*ignored*/): Bool = {
+  def inputPin(mode: Bool = Bool(false), 
+    pullup_en: Bool = Bool(false), 
+    pulldown_en: Bool = Bool(false)
+  ): Bool = {
     this.o.oval := Bool(false)
     this.o.oe   := Bool(false)
     this.o.ie   := Bool(true)
     this.i.ival
   }
+  
   def outputPin(signal: Bool,
-    pue: Bool = Bool(false), /*ignored*/
-    ds: Bool = Bool(false), /*ignored*/
+    mode: Bool = Bool(false), 
+    pullup_en: Bool = Bool(false),
+    pulldown_en: Bool = Bool(false),
+    ds0: Bool = Bool(false),
+    ds1: Bool = Bool(false),
+    ds2: Bool = Bool(false),
     ie: Bool = Bool(false)
   ): Unit = {
     this.o.oval := signal

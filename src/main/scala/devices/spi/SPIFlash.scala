@@ -18,7 +18,9 @@ class SPIFlashInsn(c: SPIFlashParamsBase) extends SPIBundle(c) {
     val code = Bits(width = c.frameBits)
     val cnt = Bits(width = c.insnPadLenBits)
   }
-  val data = new Bundle with HasSPIProtocol
+  val data = new Bundle with HasSPIProtocol {
+    val payload = UInt(width = 32)
+  }
 }
 
 class SPIFlashControl(c: SPIFlashParamsBase) extends SPIBundle(c) {
@@ -37,6 +39,7 @@ object SPIFlashInsn {
     insn.pad.cnt := UInt(0)
     insn.pad.code := Bits(0)
     insn.data.proto := SPIProtocol.Single
+    insn.data.payload := UInt(0x00000000)
     insn
   }
   def initRead(c: SPIFlashParamsBase): SPIFlashInsn = {
@@ -49,18 +52,20 @@ object SPIFlashInsn {
     insn.pad.cnt := UInt(0)
     insn.pad.code := Bits(0)
     insn.data.proto := SPIProtocol.Single
+    insn.data.payload := UInt(0x01020304)
     insn
   }
   def initWrite(c: SPIFlashParamsBase): SPIFlashInsn = {
     val insn = Wire(new SPIFlashInsn(c))
     insn.cmd.en := Bool(true)
-    insn.cmd.code := Bits(0x63)
+    insn.cmd.code := Bits(0x02)
     insn.cmd.proto := SPIProtocol.Single
     insn.addr.len := UInt(3)
     insn.addr.proto := SPIProtocol.Single
     insn.pad.cnt := UInt(0)
     insn.pad.code := Bits(0)
     insn.data.proto := SPIProtocol.Single
+    insn.data.payload := UInt(0x05060708)
     insn
   }
 }
@@ -101,12 +106,24 @@ class SPIFlashMap(c: SPIFlashParamsBase) extends Module {
   io.data.valid := Bool(false)
   io.data.bits := io.link.rx.bits
 
+/*
+`cnt` is a register that is used to keep track of the current count. The width of the register is set to the maximum of c.insnPadLenBits and c.insnAddrLenBits.
+`cnt_en` is a wire that is used to enable the counter. It is initialized to false.
+`cnt_cmp` is an array of Boolean expressions that compare the value of cnt with a range of values from 0 to c.insnAddrBytes., of width (c.insnAddrBytes + 1)
+`cnt_zero` is a Boolean expression that checks whether the value of cnt is equal to zero.
+`cnt_last` is a Boolean expression that checks whether the value of cnt is equal to 1 and whether the tx interface is ready to receive data.
+`cnt_done` is a Boolean expression that checks whether either cnt_zero or cnt_last is true.
+The when block checks whether cnt_en is true. If it is, then it sets the valid signal of the tx interface to the inverse of cnt_zero. This means that the valid signal will be high as long as cnt is not equal to zero.
+The nested when block checks whether the tx interface has fired. If it has, then it decrements the value of cnt by 1.
+*/
+
   val cnt = Reg(UInt(width = math.max(c.insnPadLenBits, c.insnAddrLenBits)))
   val cnt_en = Wire(init = Bool(false))
   val cnt_cmp = (0 to c.insnAddrBytes).map(cnt === UInt(_))
   val cnt_zero = cnt_cmp(0)
   val cnt_last = cnt_cmp(1) && io.link.tx.ready
   val cnt_done = cnt_last || cnt_zero
+  
   when (cnt_en) {
     io.link.tx.valid := !cnt_zero
     when (io.link.tx.fire) {
@@ -175,7 +192,9 @@ class SPIFlashMap(c: SPIFlashParamsBase) extends Module {
 
     is (s_data_pre) {
       io.link.fmt.proto := insn.data.proto
-      io.link.fmt.iodir := SPIDirection.Rx
+      // io.link.fmt.iodir := SPIDirection.Rx
+      io.link.fmt.iodir := Mux(insn.cmd.code === Bits(0x03), SPIDirection.Rx, SPIDirection.Tx)
+      // insn.cmd.code
       when (io.link.tx.ready) {
         state := s_data_post
       }
@@ -185,6 +204,7 @@ class SPIFlashMap(c: SPIFlashParamsBase) extends Module {
       io.link.tx.valid := Bool(false)
       io.data.valid := io.link.rx.valid
       when (io.data.fire) {
+        io.link.tx.bits := Mux(insn.cmd.code === Bits(0x03), UInt(0x00), UInt(0xCA))
         state := s_idle
       }
     }

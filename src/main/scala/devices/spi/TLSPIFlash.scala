@@ -69,19 +69,33 @@ class SPIFlashTopModule(c: SPIFlashParamsBase, outer: TLSPIFlashBase)
     a := f.a.bits
   }
 
+  println("incoming TL parameteres:")
+  println(f.a.bits)
+
   flash.io.addr.bits.next := f.a.bits.address(a_msb, 0)
   flash.io.addr.bits.hold := a.address(a_msb, 0)
   flash.io.addr.valid := f.a.valid
   f.a.ready := flash.io.addr.ready
 
-  f.d.bits := outer.fnode.edges.in.head.AccessAck(a, flash.io.data.bits)
+  val isPutRequest = (f.a.bits.opcode === TLMessages.PutFullData) | (f.a.bits.opcode === TLMessages.PutPartialData)
+  val accessAckData = outer.fnode.edges.in.head.AccessAck(a, flash.io.data.bits)
+  val accessAck = outer.fnode.edges.in.head.AccessAck(a)
+  
+  f.d.bits := Mux(isPutRequest, accessAckData, accessAckData)
+  
+  // f.d.bits := outer.fnode.edges.in.head.AccessAck(a, flash.io.data.bits)  // response to Get  // O.G. line!
+  
   f.d.valid := flash.io.data.valid
   flash.io.data.ready := f.d.ready
 
   val insn = Reg(init = SPIFlashInsn.init(c))
-  val flash_en = Reg(init = Bool(true))
+  val insnWrite = Reg(init = SPIFlashInsn.initWrite(c))
+  val insnRead = Reg(init = SPIFlashInsn.initRead(c))
 
-  flash.io.ctrl.insn := insn
+  val flash_en = Reg(init = Bool(true))
+  
+  flash.io.ctrl.insn := Mux(isPutRequest, insnWrite, insnRead)
+  // flash.io.ctrl.insn := insn
   flash.io.ctrl.fmt <> ctrl.fmt
   flash.io.en := flash_en
   arb.io.sel := !flash_en
@@ -115,7 +129,7 @@ class SPIFlashTopModule(c: SPIFlashParamsBase, outer: TLSPIFlashBase)
   )
 }
 
-abstract class TLSPIFlashBase(w: Int, c: SPIFlashParamsBase)(implicit p: Parameters) extends TLSPIBase(w,c)(p) {
+abstract class TLSPIFlashBase(w: Int, c: SPIFlashParamsBase)(implicit p: Parameters) extends TLSPIBase(w, c)(p) {
   require(isPow2(c.fSize))
   val fnode = TLManagerNode(Seq(TLSlavePortParameters.v1(
     managers = Seq(TLSlaveParameters.v1(
@@ -124,6 +138,8 @@ abstract class TLSPIFlashBase(w: Int, c: SPIFlashParamsBase)(implicit p: Paramet
       regionType  = RegionType.UNCACHED,
       executable  = true,
       supportsGet = TransferSizes(1, 1),
+            supportsPutFull    = TransferSizes(1, 1),
+            supportsPutPartial = TransferSizes(1, 1),
       fifoId      = Some(0))),
     beatBytes = 1)))
   val memXing = this.crossIn(fnode)

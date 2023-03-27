@@ -175,8 +175,8 @@ class FlashDevice(spi: Device, bits: Int = 4, maxMHz: Double = 50, compat: Seq[S
 
 abstract class TLSPIBase(w: Int, c: SPIParamsBase)(implicit p: Parameters) extends IORegisterRouter(
       RegisterRouterParams(
-        name = "spi",
-        compat = Seq("sifive,spi0"),
+        name = "QSPI",
+        compat = Seq("sifive, QSPI0"),
         base = c.rAddress,
         size = c.rSize,
         beatBytes = w),

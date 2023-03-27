@@ -39,6 +39,30 @@ object SPIFlashInsn {
     insn.data.proto := SPIProtocol.Single
     insn
   }
+  def initRead(c: SPIFlashParamsBase): SPIFlashInsn = {
+    val insn = Wire(new SPIFlashInsn(c))
+    insn.cmd.en := Bool(true)
+    insn.cmd.code := Bits(0x03)
+    insn.cmd.proto := SPIProtocol.Single
+    insn.addr.len := UInt(3)
+    insn.addr.proto := SPIProtocol.Single
+    insn.pad.cnt := UInt(0)
+    insn.pad.code := Bits(0)
+    insn.data.proto := SPIProtocol.Single
+    insn
+  }
+  def initWrite(c: SPIFlashParamsBase): SPIFlashInsn = {
+    val insn = Wire(new SPIFlashInsn(c))
+    insn.cmd.en := Bool(true)
+    insn.cmd.code := Bits(0x63)
+    insn.cmd.proto := SPIProtocol.Single
+    insn.addr.len := UInt(3)
+    insn.addr.proto := SPIProtocol.Single
+    insn.pad.cnt := UInt(0)
+    insn.pad.code := Bits(0)
+    insn.data.proto := SPIProtocol.Single
+    insn
+  }
 }
 
 class SPIFlashAddr(c: SPIFlashParamsBase) extends SPIBundle(c) {

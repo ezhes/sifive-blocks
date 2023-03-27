@@ -204,7 +204,7 @@ The nested when block checks whether the tx interface has fired. If it has, then
       io.link.tx.valid := Bool(false)
       io.data.valid := io.link.rx.valid
 
-        io.link.tx.bits := Mux(insn.cmd.code === Bits(0x03), UInt(0x00), UInt(0xCA))
+        io.link.tx.bits := Mux(insn.cmd.code === Bits(0x03), UInt(0x00), UInt(0x11223344))
       when (io.data.fire()) {
         state := s_idle
       }

@@ -81,6 +81,7 @@ class SPIFlashMap(c: SPIFlashParamsBase) extends Module {
     val ctrl = new SPIFlashControl(c).asInput
     val addr = Decoupled(new SPIFlashAddr(c)).flip
     val data = Decoupled(UInt(width = c.frameBits))
+    val txdata = Input(UInt(width = 32))
     val link = new SPIInnerIO(c)
   }
 
@@ -123,6 +124,8 @@ The nested when block checks whether the tx interface has fired. If it has, then
   val cnt_zero = cnt_cmp(0)
   val cnt_last = cnt_cmp(1) && io.link.tx.ready
   val cnt_done = cnt_last || cnt_zero
+
+  val data_cnt = Reg(UInt(width = 7))
   
   when (cnt_en) {
     io.link.tx.valid := !cnt_zero
@@ -131,12 +134,14 @@ The nested when block checks whether the tx interface has fired. If it has, then
     }
   }
 
+  //   0        1         2           3       4               5             6
   val (s_idle :: s_cmd :: s_addr :: s_pad :: s_data_pre :: s_data_post :: s_off :: Nil) = Enum(UInt(), 7)
   val state = Reg(init = s_idle)
 
   switch (state) {
     is (s_idle) {
       io.link.tx.valid := Bool(false)
+      data_cnt := 0.U
       when (io.en) {
         io.addr.ready := Bool(true)
         when (io.addr.valid) {
@@ -196,6 +201,7 @@ The nested when block checks whether the tx interface has fired. If it has, then
       io.link.fmt.iodir := Mux(insn.cmd.code === Bits(0x03), SPIDirection.Rx, SPIDirection.Tx)
       // insn.cmd.code
       when (io.link.tx.ready) {
+        data_cnt := data_cnt + 1.U
         state := s_data_post
       }
     }
@@ -204,7 +210,7 @@ The nested when block checks whether the tx interface has fired. If it has, then
       io.link.tx.valid := Bool(false)
       io.data.valid := io.link.rx.valid
       when (io.data.fire) {
-        io.link.tx.bits := Mux(insn.cmd.code === Bits(0x03), UInt(0x00), UInt(0x11223344))
+        io.link.tx.bits := Mux(insn.cmd.code === Bits(0x03), UInt(0x00), io.txdata)
         state := s_idle
       }
     }
